@@ -50,13 +50,110 @@ data Editor = Editor
     { buffer  :: V.Vector Cell
     , gapStart :: Int
     , gapEnd :: Int
-    , size :: Int 
     } deriving (Show , Eq)
 
 
+editSize :: Editor -> Int
+editSize e = V.length (buffer e) - 1 
+
+
 empty :: Editor 
-empty = let size = 5 -- lets not let this be negative ! 
-        in Editor { buffer = V.replicate size Gap , gapStart = 0 , gapEnd = size - 1 , size = size }
+empty = let initialSize = 5 -- lets not have sz be zero or negative !        
+        in Editor { buffer = V.replicate initialSize Gap ,
+                    gapStart = 0 ,
+                    gapEnd = initialSize - 1 }
+
+
+
+{--
+moveLeft a character
+             [ G G G ]
+               |   gap start == 0 so already at start -- no op !
+
+             [ C C G G G C C ]
+                   |
+                  gap start > 0 
+
+--}
+
+moveLeft :: Editor -> Editor
+moveLeft e  =
+  let buf   = buffer e
+      start = gapStart e
+      end   = gapEnd e
+  in if start > 0
+     then let cell = buf V.! (start - 1)
+          in let buf2 = V.update buf (V.fromList [(start - 1, Gap),(end,cell)])
+             in e { buffer = buf2 , gapStart = start - 1 , gapEnd = end - 1  }
+     else e
+
+
+
+{--
+moveRight a character
+
+size is constant held in buffer structure - simply equals V.length (buffer e) - 1
+the length of the vector buffer minus 1 
+
+                  size
+                   |
+             [ G G G ]
+                   |   gap end == size  so already at end -- no op !
+                  gap
+                  end
+
+
+                        
+               char     char
+               ends     to
+               here     mov
+                  *      |   size
+                   *     |   | 
+             [ C C G G G C C C ]        
+                  *    |           gap end < size 
+                *     gap
+         gap start    end
+
+
+
+--}
+
+moveRight :: Editor -> Editor
+moveRight e =
+  let buf   = buffer e
+      start = gapStart e
+      end   = gapEnd e
+      sz    = (V.length (buffer e)) - 1
+  in if (end + 1) <= sz 
+     then let cell = buf V.! (end + 1)
+          in let buf2 = V.update buf (V.fromList [(start, cell),(end+1,Gap)])
+             in e { buffer = buf2 , gapStart = start + 1 , gapEnd = end + 1  }
+     else e
+
+
+
+
+{--
+delete a character
+             [ G G G ]
+               |   gap start == 0 so already at start -- no op !
+
+             [ C C G G G C C ]
+                   |
+                  gap start > 0 
+
+--}
+
+delete :: Editor -> Editor
+delete e  =
+  let buf = buffer e
+      start = gapStart e
+      end   = gapEnd e
+  in if start > 0
+     then let buf2 = V.update buf (V.fromList [(start - 1, Gap)])
+          in e { buffer = buf2 , gapStart = start - 1 }
+     else e
+
            
 
 {--
@@ -94,8 +191,9 @@ debug grow = increase size by 1 of original buffer
 
 --}
 insert :: Char -> Editor -> Editor
-insert ch e  =    let start = gapStart e
-                      end   = gapEnd e
+insert ch e  =
+  let start = gapStart e
+      end   = gapEnd e
   in if start >= end
      then growInsert ch e
      else plainInsert ch e
@@ -174,26 +272,26 @@ grow e =
   let buf   = buffer e
       start = gapStart e
       end   = gapEnd e
-      sz    = size e 
+      sz    = editSize e  
   in let newSize = sz + 1
      in let newBuffer = V.replicate newSize Gap
         in let newBuffer2 = newBuffer V.// (copyUp e)
            in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz))
-              in Editor { buffer = newBuffer3 , size = newSize , gapStart= start,gapEnd= end + (newSize - sz) }
+              in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + (newSize - sz) }
               
   
 
 g0 :: Editor
-g0 = Editor { buffer = V.fromList [Gap,Ch 'z'] , size = 2 , gapStart = 0, gapEnd = 0 }
+g0 = Editor { buffer = V.fromList [Gap,Ch 'z'] ,gapStart = 0, gapEnd = 0 }
 
 g1 :: [(Int,Cell)]
 g1 = copyDown g0
 
 g2 :: [(Int,Cell)]
-g2 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'y',Ch 'z'] , size = 3 , gapStart = 0, gapEnd = 0 }
+g2 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'y',Ch 'z'] ,gapStart = 0, gapEnd = 0 }
 
 g3 :: [(Int,Cell)]
-g3 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'x', Ch 'y',Ch 'z'] , size = 4 , gapStart = 0, gapEnd = 0 }
+g3 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'x', Ch 'y',Ch 'z'] , gapStart = 0, gapEnd = 0 }
 
 
 
