@@ -68,7 +68,8 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0
+    build-depends:    QuickCheck >= 2.18.0.0,
+                      base ^>=4.18.3.0
 
     -- Directories containing source files.
     hs-source-dirs:   src
@@ -82,7 +83,7 @@ executable haskell-editor
 
     -- .hs or .lhs file containing the Main module.
     main-is:          Main.hs
-
+    
     -- Modules included in this executable, other than Main.
     -- other-modules:
 
@@ -91,8 +92,9 @@ executable haskell-editor
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.18.3.0,
-        haskell-editor
+                  QuickCheck >= 2.18.0.0,
+                  base ^>=4.18.3.0,
+                  haskell-editor
 
     -- Directories containing source files.
     hs-source-dirs:   app
@@ -124,5 +126,6 @@ test-suite haskell-editor-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.18.3.0,
-        haskell-editor
+                  QuickCheck >= 2.18.0.0,
+                  base ^>=4.18.3.0,
+                  haskell-editor

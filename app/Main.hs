@@ -3,6 +3,7 @@
 module Main (main) where
 
 import qualified MyLib (someFunc)
+import Test.QuickCheck
 
 type Text = [Char]
 
@@ -78,7 +79,13 @@ example2 = run
   example1
 
 
+prop_reverse :: [Int] -> Bool
+prop_reverse xs =
+    reverse (reverse xs) == xs
+
+
 main :: IO ()
-main = do
-  putStrLn "Hello, Haskell!"
-  MyLib.someFunc
+main =
+  do putStrLn "Hello, Haskell!"
+     quickCheck prop_reverse
+
