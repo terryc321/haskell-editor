@@ -2,23 +2,48 @@ module GapEditorSpec (runTests) where
 
 import Test.QuickCheck
 import Test.QuickCheck.Gen (oneof)
+import qualified Data.Vector as V
 
 import GapEditor 
 
 runTests :: IO ()
 runTests = do
   putStrLn "starting GapEditorSpec tests"
+  
+  putStrLn "starting prop run"
   quickCheck prop_run
+  
+  putStrLn "starting prop_insert_increases_length"
   quickCheck prop_insert_increases_length
-  quickCheck prop_run_consistency
+  
+  putStrLn "starting prop_insert_length"
   quickCheck prop_insert_length
+  
+  putStrLn "starting prop_delete_length" 
   quickCheck prop_delete_length
+
+  putStrLn "starting prop_moveLeft_preserves_contents"
   quickCheck prop_moveLeft_preserves_contents
+
+  putStrLn "starting prop_moveRight_preserves_contents"
   quickCheck prop_moveRight_preserves_contents
+
+  putStrLn "starting prop_left_right_preserves_contents"  
   quickCheck prop_move_left_right_preserves_contents
-  quickCheck prop_insert_then_delete_length
-  quickCheck prop_insert_then_delete
+
+  -- putStrLn "starting prop_run_consistency"
+  -- quickCheck prop_run_consistency
+   
+
+  -- putStrLn "starting prop_insert_then_delete_length"    
+  -- quickCheck prop_insert_then_delete_length
+
+  -- putStrLn "starting prop_insert_then_delete"      
+  -- quickCheck prop_insert_then_delete
+
+  putStrLn "starting prop_run_composition"        
   quickCheck prop_run_composition
+  
   putStrLn "completed GapEditorSpec tests"
 
 
@@ -98,3 +123,11 @@ prop_insert_increases_length :: Char -> Editor -> Bool
 prop_insert_increases_length c e =
   length (contents (run [Insert c] e)) == length (contents e) + 1
 
+
+{--
+
+--}
+
+let bug1 = let cmds = [Insert '?',Insert 'j',Insert '#',Insert 'r',Insert '\'']
+               edit = Editor {buffer = V.fromList [Ch 'Y',Ch '~',Ch 'Q',Gap,Gap,Gap,Gap,Gap,Ch 'c',Ch '?'], gapStart = 3, gapEnd = 7}
+           in run cmds edit

@@ -10,8 +10,8 @@ import qualified GapEditorSpec
 
 main :: IO ()
 main = do
-  --EditorSpec.runTests
-  --RefEditorSpec.runTests
+  EditorSpec.runTests
+  RefEditorSpec.runTests
   GapEditorSpec.runTests
 
   

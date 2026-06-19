@@ -152,7 +152,7 @@ insert ch e  =
   let start = gapStart e
       end   = gapEnd e
   in if start >= end
-     then e --growInsert ch e
+     then growInsert ch e
      else plainInsert ch e
     
 plainInsert :: Char -> Editor -> Editor    
@@ -208,6 +208,15 @@ grow e =
            in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz))
               in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + (newSize - sz) - 1 }
               
+
+{--
+
+sanityCheck :: Editor
+sanityCheck = let commands = replicate 100000 (G.Insert 'x')
+                  eout = G.run commands G.empty
+                    print (length (G.contents eout))
+                 
+--}
 
 
 
