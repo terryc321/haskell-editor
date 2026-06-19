@@ -60,7 +60,8 @@ library
 
     -- Modules exported by the library.
     exposed-modules:  MyLib,
-                      Editor
+                      Editor,
+                      RefEditor
 
     -- Modules included in this library but not exported.
     -- other-modules:

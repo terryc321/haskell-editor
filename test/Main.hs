@@ -3,14 +3,73 @@ module Main (main) where
 import Test.QuickCheck
 import Test.QuickCheck.Gen (oneof)
 
-import Editor
+import Editor as E
+import RefEditor as R 
 
 main :: IO ()
 main = do
   quickCheck prop_run
   quickCheck prop_insert_increases_length
   quickCheck prop_run_consistency
+  quickCheck prop_insert_length
+  quickCheck prop_delete_length
+  quickCheck prop_moveLeft_preserves_contents
+  quickCheck prop_moveRight_preserves_contents
+  quickCheck prop_move_left_right_preserves_contents
+  quickCheck prop_insert_then_delete_length
+  quickCheck prop_insert_then_delete
+  quickCheck prop_run_composition
+  -- quickCheck prop_editor_matches_reference
 
+
+-- prop_editor_matches_reference :: [Command] -> Editor -> Bool
+-- prop_editor_matches_reference cmds e =
+--   contents (run cmds e)  == refRun cmds (contents e)
+
+prop_run_composition :: [E.Command] -> [E.Command] -> E.Editor -> Bool
+prop_run_composition xs ys e =
+  E.run (xs ++ ys) e
+  == E.run ys (E.run xs e)
+
+prop_insert_then_delete :: Char -> E.Editor -> Bool
+prop_insert_then_delete c e =
+  let e1 = run [Insert c, Delete] e
+  in e1 == e 
+
+
+prop_insert_then_delete_length :: Char -> Editor -> Bool
+prop_insert_then_delete_length c e =
+  let e1 = run [Insert c, Delete] e
+  in length (contents e1) <= length (contents e) + 1  
+
+-- cursor move left then move right should not change the document
+prop_move_left_right_preserves_contents :: Editor -> Bool
+prop_move_left_right_preserves_contents e =
+  contents (run [MoveRight, MoveLeft] e)
+  == contents e
+  
+-- move right does not change the document
+prop_moveRight_preserves_contents :: Editor -> Bool
+prop_moveRight_preserves_contents e =
+  contents (run [MoveRight] e) == contents e
+
+-- move left does not change the document
+prop_moveLeft_preserves_contents :: Editor -> Bool
+prop_moveLeft_preserves_contents e =
+  contents (run [MoveLeft] e) == contents e
+  
+-- delete command results in an equal or smaller length contents
+-- buffer may be empty or cursor point is already far left as possible
+prop_delete_length :: Editor -> Bool
+prop_delete_length e =
+  length (contents (run [Delete] e))
+  <= length (contents e)
+
+-- insert one character increases length of contents by one 
+prop_insert_length :: Char -> Editor -> Bool
+prop_insert_length c e =
+  length (contents (run [Insert c] e))
+  == length (contents e) + 1
 
 instance Arbitrary Command where
   arbitrary =
@@ -39,92 +98,3 @@ prop_insert_increases_length :: Char -> Editor -> Bool
 prop_insert_increases_length c e =
   length (contents (run [Insert c] e)) == length (contents e) + 1
 
-  
-
-{--
-
--- prop_run :: [Char] -> [Char] -> Bool
--- prop_run xs ys =
---   let e = Editor {left = xs , right = ys}
---   in run [] e == e
-
-
-
--- Global Instance: Includes ALL constructors
--- Used by default for general tests
-instance Arbitrary Command where
-    arbitrary = oneof 
-        [ pure MoveLeft
-        , pure MoveRight
-        , Insert <$> arbitrary
-        , pure Delete
-        ]
-
-
-genMoveOnly :: Gen Command
-genMoveOnly = oneof 
-    [ pure MoveLeft
-    , pure MoveRight
-    ]
-
--- 4. Property Test: Uses the restricted list
-prop_onlyMoves :: Property
-prop_onlyMoves = 
-    forAll (listOf genMoveOnly) $ \cmds ->
-        -- Verify logic assuming no Insert/Delete occurred
-        -- Optional sanity check:
-        all isMove cmds
-  where
-    isMove MoveLeft  = True
-    isMove MoveRight = True
-    isMove _         = False
-
--- 5. General Property Test: Uses ALL constructors (default)
-prop_allCommands :: [Command] -> Bool
-prop_allCommands cmds = True 
-    
-
-instance Arbitrary Command where
-    arbitrary = oneof 
-        [ MoveLeft
-        , MoveRight
-        , Insert <$> arbitrary
-        , Delete
-        ]
-
-genLimitedCommand :: Gen Command
-genLimitedCommand = oneof 
-    [ MoveLeft
-    , MoveRight
-    -- Insert and Delete excluded here
-    ]
-
-
--- 4. Test using the FULL set (uses default 'arbitrary')
-prop_allCommands :: [Command] -> Bool
-prop_allCommands cmds = 
-    -- Logic that assumes all constructor types might appear
-    True 
-
--- 5. Test using the RESTRICTED set (uses 'forAll')
-prop_onlyCreateDelete :: Property
-prop_onlyCreateDelete = 
-    forAll (listOf genLimitedCommand) $ \cmds ->
-        -- Logic that only makes sense for Create/Delete
-        -- We can even assert the restriction holds as a sanity check
-        all isLimited cmds
-  where
-    isLimited (Create _) = True
-    isLimited (Delete _) = True
-    isLimited _          = False
-
-
-
-
-
-prop_move :: [Char] -> [Char] -> Bool
-prop_move xs ys =
-  let e = Editor {left = xs , right = ys}
-  in run [] e == e
-
---}
