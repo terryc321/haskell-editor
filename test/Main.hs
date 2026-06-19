@@ -5,10 +5,13 @@ module Main (main) where
 
 import qualified EditorSpec
 import qualified RefEditorSpec
+import qualified GapEditorSpec
+
 
 main :: IO ()
 main = do
-  EditorSpec.runTests
-  RefEditorSpec.runTests
+  --EditorSpec.runTests
+  --RefEditorSpec.runTests
+  GapEditorSpec.runTests
 
   

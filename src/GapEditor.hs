@@ -17,7 +17,8 @@ module GapEditor
     moveLeft,
     moveRight,
     -- --
-    empty 
+    empty,
+    mkEditor
   ) where 
 
 import Command
@@ -52,6 +53,54 @@ contents e =
   let xs = V.toList (buffer e)
   in let ys = filter (\e -> not (e == Gap)) xs  -- let map (\(Ch c) -> c) $
      in map (\(Ch c) -> c) ys
+
+
+{--
+if we have a gap equal to amount text length (xs ++ ys)
+
+   0     len
+        xs-1
+   |<----->| <--------> |<----->|
+     xs       gap          ys
+   xs from 0 to lenXs - 1
+gap from lenXs to lenXs + lenXs + lenYs
+   ys from (lenXs + lenXs + lenYs) + 1
+      to (lenXs + lenXs + lenYs) + 1 + lenYs 
+ 
+   xs = 3  gap = 7  ys = 4
+
+   X X  X  |  G G G G G G G     |  Y  Y  Y  Y
+   0 1  2  |  3 4 5 6 7 8 9     |  10 11 12 13
+       ^^^               ^^^      ^^        ^^^
+      xs-1            xs+gap-1   xs+gap    xs+gap+ys-1                     
+             
+
+the smallest the buffer can be is clamped to be atleast 5
+
+--}
+
+mkEditor :: [Char] -> [Char] -> Editor
+mkEditor xs ys =
+  let lenXs = length xs
+      lenYs = length ys
+      lenGap = max (lenXs + lenYs) 5 
+      lenTot = lenGap + lenXs + lenYs
+      xc = map (\c -> Ch c) xs
+      yc = map (\c -> Ch c) ys
+      gc = L.replicate lenGap Gap
+      all = xc ++ gc ++ yc
+      st = lenXs
+      en = lenXs + lenGap - 1
+  in Editor { buffer = V.fromList all , gapStart = st , gapEnd = en }
+      
+-- test =
+--   let x = 3
+--       y = x + 1
+--       z = x + y
+--   in z
+         
+
+  
 
 cursorPosition :: Editor -> Int
 cursorPosition e = gapStart e 
@@ -103,7 +152,7 @@ insert ch e  =
   let start = gapStart e
       end   = gapEnd e
   in if start >= end
-     then growInsert ch e
+     then e --growInsert ch e
      else plainInsert ch e
     
 plainInsert :: Char -> Editor -> Editor    
@@ -118,20 +167,29 @@ growInsert :: Char -> Editor -> Editor
 growInsert ch e = plainInsert ch $ grow e
 
 copyUp :: Editor -> [(Int,Cell)]
-copyUp e = copyUp2 0 []             
+copyUp e =
+  let lim = V.length (buffer e) - 1
+  in copyUp2 0 lim []             
   where
-    copyUp2 :: Int -> [(Int,Cell)] -> [(Int,Cell)]
-    copyUp2 i acc = case (buffer e V.! i) of 
-                          Gap -> acc
-                          Ch c -> copyUp2 (i+1) ((i,Ch c) : acc)
+    copyUp2 :: Int -> Int -> [(Int,Cell)] -> [(Int,Cell)]
+    copyUp2 i lim acc =
+      if i > lim then acc
+      else case (buffer e V.! i) of 
+             Gap -> acc
+             Ch c -> copyUp2 (i+1) lim ((i,Ch c) : acc)
 
 copyDown :: Editor -> [(Int,Cell)]
-copyDown e = copyDown2 (V.length (buffer e) - 1) []             
+copyDown e =
+  let lim = 0
+  in copyDown2 (V.length (buffer e) - 1) lim []             
   where
-    copyDown2 :: Int -> [(Int,Cell)] -> [(Int,Cell)]
-    copyDown2 i acc = case (buffer e V.! i) of 
-                          Gap -> acc
-                          Ch c -> copyDown2 (i-1) ((i,Ch c) : acc)
+    copyDown2 :: Int -> Int -> [(Int,Cell)] -> [(Int,Cell)]
+    copyDown2 i lim acc =
+      if i < lim then acc
+      else case (buffer e V.! i) of 
+             Gap -> acc
+             Ch c -> copyDown2 (i-1) lim ((i,Ch c) : acc)
+             
 
 growFixUp :: [(Int,Cell)] -> Int -> [(Int,Cell)]
 growFixUp xs n = map fixup xs

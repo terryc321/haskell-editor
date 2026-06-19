@@ -84,7 +84,7 @@ instance Arbitrary Editor where
   arbitrary = do
     xs <- arbitrary
     ys <- arbitrary
-    return (Editor { left = xs, right = ys })
+    return ( mkEditor xs ys )
 
 prop_run_consistency :: [Command] -> Editor -> Bool
 prop_run_consistency cmds e =
