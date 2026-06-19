@@ -8,14 +8,47 @@ import Editor
 main :: IO ()
 main = do
   quickCheck prop_run
+  quickCheck prop_insert_increases_length
+  quickCheck prop_run_consistency
 
-prop_run :: [Char] -> [Char] -> Bool
-prop_run xs ys =
-  let e = Editor {left = xs , right = ys}
-  in run [] e == e
 
+instance Arbitrary Command where
+  arbitrary =
+    oneof
+      [ Insert <$> arbitrary
+      , pure Delete
+      , pure MoveLeft
+      , pure MoveRight
+      ]
+
+instance Arbitrary Editor where
+  arbitrary = do
+    xs <- arbitrary
+    ys <- arbitrary
+    return (Editor { left = xs, right = ys })
+
+prop_run_consistency :: [Command] -> Editor -> Bool
+prop_run_consistency cmds e =
+  run cmds e == run cmds e
+  
+
+prop_run :: Editor -> Bool
+prop_run e = run [] e == e
+
+prop_insert_increases_length :: Char -> Editor -> Bool
+prop_insert_increases_length c e =
+  length (contents (run [Insert c] e)) == length (contents e) + 1
+
+  
 
 {--
+
+-- prop_run :: [Char] -> [Char] -> Bool
+-- prop_run xs ys =
+--   let e = Editor {left = xs , right = ys}
+--   in run [] e == e
+
+
 
 -- Global Instance: Includes ALL constructors
 -- Used by default for general tests
@@ -86,7 +119,6 @@ prop_onlyCreateDelete =
     isLimited _          = False
 
 
---}
 
 
 
@@ -95,3 +127,4 @@ prop_move xs ys =
   let e = Editor {left = xs , right = ys}
   in run [] e == e
 
+--}
