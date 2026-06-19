@@ -1,0 +1,122 @@
+{-# OPTIONS_GHC -Wall #-}
+
+module Main (main) where
+
+import qualified MyLib (someFunc)
+
+type Text = [Char]
+
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    } deriving (Show , Eq)
+
+-- represents abc|def    
+example1 = Editor {left="abc",right= "def"}
+
+
+{--
+Operations editor can do are
+
+insert
+delete
+moveLeft
+moveRight
+
+terminology
+character - a unit of text , think of it like a letter in a sentence.
+cursor - where the next character will be generated in the text buffer
+sometimes represented by a blinky blinky
+
+< insert spec >
+insert adds a character , then advances cursor
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    }
+produces a new Editor with properties
+ [ left ++ [ch] ; right ]
+
+< contents spec >
+what is the contents of the buffer as a contiguous piece of text
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    }
+ this is simply
+ left ++ right : [Char]  list of Char 
+
+< delete spec >
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    }
+we drop a character from the end of last
+delete = Editor { left= butlast l , right = r }
+
+
+< moveLeft spec >
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    }
+moveLeft = Editor { left= butlast l , right = (last l) : r }
+
+< moveRight spec >
+data Editor = Editor
+    { left  :: [Char]
+    , right :: [Char]
+    }
+moveRight = Editor { left= butlast l , right = r }
+
+
+--}  
+
+butlast :: [Char] -> [Char]
+butlast [] = []
+butlast xs = init xs
+
+safeLast :: [Char] -> Maybe Char
+safeLast [] = Nothing
+safeLast (h:[]) = Just h
+safeLast (h:t) = safeLast t
+
+safeHead :: [Char] -> Maybe Char
+safeHead [] = Nothing
+safeHead (h:_) = Just h
+
+contents :: Editor -> [Char]
+contents (Editor {left=l , right=r}) = l ++ r 
+
+insert :: Char -> Editor -> Editor
+insert ch (Editor {left=l , right=r}) = Editor {left= l ++ [ch],right =r}
+
+delete :: Editor -> Editor
+delete (Editor {left=l , right=r}) = Editor {left= butlast l,right =r}
+
+-- since we use pattern matching we can guarantee left has a last element
+moveLeft :: Editor -> Editor
+moveLeft (Editor {left=[] , right=r}) = (Editor {left=[] , right=r})
+moveLeft (Editor {left=(h:t) , right=r}) =
+  let a = last (h:t)
+  in Editor {left= butlast (h:t),right = a : r}
+  
+  -- let a = last (h:t)
+  -- in case a of
+  --   Nothing -> Editor {left=l , right=r}
+  --   Just v  -> Editor {left= butlast l,right = v : r}
+
+moveRight :: Editor -> Editor
+moveRight (Editor {left=l , right=[] }) = (Editor {left=l , right=[] })
+moveRight (Editor {left=l , right=(h:t)}) =
+   Editor {left= l ++ [h] ,right = t}
+
+  -- let a = safeHead r
+  -- in case a of
+  --   Nothing => Editor {left=l , right=r}
+  --   Just v  => Editor {left= l ++ [v] ,right = }
+
+main :: IO ()
+main = do
+  putStrLn "Hello, Haskell!"
+  MyLib.someFunc
