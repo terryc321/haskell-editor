@@ -3,21 +3,21 @@
 
 module GapEditor
   ( -- core types
-    -- Editor(..),
-    -- Command(..), -- deduplicated out into Command.hs 
+    Editor(..),
+    Command(..), -- deduplicated out into Command.hs 
     -- -- interpreter
-    -- apply,
-    -- run,
+    apply,
+    run,
     -- -- observable api
-    -- contents,
-    -- cursorPosition,
+    contents,
+    cursorPosition,
     -- -- primitives
-    -- insert,
-    -- delete,
-    -- moveLeft,
-    -- moveRight,
+    insert,
+    delete,
+    moveLeft,
+    moveRight,
     -- --
-    -- empty 
+    empty 
   ) where 
 
 import Command
@@ -53,6 +53,24 @@ data Editor = Editor
     } deriving (Show , Eq)
 
 
+{--
+get contents as a list of Char 
+--}
+contents :: Editor -> [Char]
+contents e =
+  let xs = V.toList (buffer e)
+  in let ys = filter (\e -> not (e == Gap)) xs  -- let map (\(Ch c) -> c) $
+     in map (\(Ch c) -> c) ys
+
+        
+
+{--
+cursorPosition 
+--}
+cursorPosition :: Editor -> Int
+cursorPosition e = gapStart e 
+
+
 editSize :: Editor -> Int
 editSize e = V.length (buffer e) - 1 
 
@@ -74,6 +92,8 @@ moveLeft a character
                    |
                   gap start > 0 
 
+  clamp gap start , gap end to be lowest 0 
+
 --}
 
 moveLeft :: Editor -> Editor
@@ -84,7 +104,7 @@ moveLeft e  =
   in if start > 0
      then let cell = buf V.! (start - 1)
           in let buf2 = V.update buf (V.fromList [(start - 1, Gap),(end,cell)])
-             in e { buffer = buf2 , gapStart = start - 1 , gapEnd = end - 1  }
+             in e { buffer = buf2 , gapStart = max 0 (start - 1) , gapEnd = max 0 (end - 1)  }
      else e
 
 
@@ -273,11 +293,11 @@ grow e =
       start = gapStart e
       end   = gapEnd e
       sz    = editSize e  
-  in let newSize = sz + 1
+  in let newSize = sz + 2
      in let newBuffer = V.replicate newSize Gap
         in let newBuffer2 = newBuffer V.// (copyUp e)
            in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz))
-              in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + (newSize - sz) }
+              in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + (newSize - sz) - 1 }
               
   
 
@@ -343,15 +363,15 @@ g3 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'x', Ch 'y',Ch 'z'] , gapSt
 -- --     | MoveRight
 -- --     deriving (Show,Eq)
 
--- apply :: Command -> Editor -> Editor
--- apply (Insert c)  e = insert c e
--- apply (Delete)    e = delete e
--- apply (MoveLeft)  e = moveLeft e
--- apply (MoveRight) e = moveRight e
+apply :: Command -> Editor -> Editor
+apply (Insert c)  e = insert c e
+apply (Delete)    e = delete e
+apply (MoveLeft)  e = moveLeft e
+apply (MoveRight) e = moveRight e
 
--- run :: [Command] -> Editor -> Editor
--- run [] e = e
--- run (h:t) e = run t (apply h e)
+run :: [Command] -> Editor -> Editor
+run [] e = e
+run (h:t) e = run t (apply h e)
 
 -- -- fallback when Editor to Editor created a single string
 -- -- but we create a similar two lists except first is reversed 
