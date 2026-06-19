@@ -136,7 +136,9 @@ test-suite haskell-editor-test
     build-depends:
                   QuickCheck >= 2.18.0.0,
                   base ^>=4.18.3.0,
-                  haskell-editor
+                  haskell-editor,
+                  vector,
+                  random
 
                   
 benchmark haskell-editor-bench
@@ -148,6 +150,7 @@ benchmark haskell-editor-bench
         base,
         haskell-editor,
         criterion,
-        random
+        random,
+        vector
 
     default-language: Haskell2010                  

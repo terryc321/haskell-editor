@@ -5,6 +5,7 @@ module GapEditor
   ( -- core types
     Editor(..),
     Command(..),
+    Cell(..),
     -- -- interpreter
     apply,
     run,
@@ -18,7 +19,8 @@ module GapEditor
     moveRight,
     -- --
     empty,
-    mkEditor
+    mkEditor,
+    trace    
   ) where 
 
 import Command
@@ -37,16 +39,6 @@ data Editor = Editor
     , gapEnd :: Int
     } deriving (Show , Eq)
 
-
-apply :: Command -> Editor -> Editor
-apply (Insert c)  e = insert c e
-apply (Delete)    e = delete e
-apply (MoveLeft)  e = moveLeft e
-apply (MoveRight) e = moveRight e
-
-run :: [Command] -> Editor -> Editor
-run [] e = e
-run (h:t) e = run t (apply h e)
 
 contents :: Editor -> [Char]
 contents e =
@@ -142,7 +134,8 @@ delete e  =
   let buf = buffer e
       start = gapStart e
       end   = gapEnd e
-  in if start > 0
+      sz    = (V.length (buffer e)) - 1
+  in if start > 0 && start <= sz
      then let buf2 = V.update buf (V.fromList [(start - 1, Gap)])
           in e { buffer = buf2 , gapStart = start - 1 }
      else e
@@ -151,8 +144,8 @@ insert :: Char -> Editor -> Editor
 insert ch e  =
   let start = gapStart e
       end   = gapEnd e
-  in if start >= end
-     then growInsert ch e
+  in if start >= end - 1
+     then e -- growInsert ch e -- ignore growing
      else plainInsert ch e
     
 plainInsert :: Char -> Editor -> Editor    
@@ -160,6 +153,7 @@ plainInsert ch e =
   let buf   = buffer e
       start = gapStart e
       end   = gapEnd e 
+      sz    = (V.length (buffer e)) - 1
   in let buf2 = V.update buf (V.fromList [(start, Ch ch)])
      in e {buffer = buf2 , gapStart = start + 1}
 
@@ -219,5 +213,30 @@ sanityCheck = let commands = replicate 100000 (G.Insert 'x')
 --}
 
 
+apply :: Command -> Editor -> Editor
+apply (Insert c)  e = insert c e
+apply (Delete)    e = delete e
+apply (MoveLeft)  e = moveLeft e
+apply (MoveRight) e = moveRight e
+
+run :: [Command] -> Editor -> Editor
+run [] e = e
+run (h:t) e = run t (apply h e)
+
+
+trace2 :: [Command] -> Editor -> IO ()
+trace2 [] e = putStrLn $ "trace finished."
+trace2 (h:t) e = do putStrLn $ "applying " ++ show h
+                    putStrLn $ "editor = " ++ show e
+                    let out = apply h e
+                    putStrLn $ "out = " ++ show out
+                    trace2 t e 
+
+trace :: [Command] -> Editor -> IO ()
+trace cmd e = do putStrLn $ "Tracer started "
+                 putStrLn $ "commands = " ++ show cmd
+                 putStrLn $ "editor = " ++ show e
+                 trace2 cmd e
+                    
 
 

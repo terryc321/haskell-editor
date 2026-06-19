@@ -31,15 +31,14 @@ runTests = do
   putStrLn "starting prop_left_right_preserves_contents"  
   quickCheck prop_move_left_right_preserves_contents
 
-  -- putStrLn "starting prop_run_consistency"
-  -- quickCheck prop_run_consistency
-   
+  putStrLn "starting prop_run_consistency"
+  quickCheck prop_run_consistency
 
-  -- putStrLn "starting prop_insert_then_delete_length"    
-  -- quickCheck prop_insert_then_delete_length
+  putStrLn "starting prop_insert_then_delete_length"    
+  quickCheck prop_insert_then_delete_length
 
-  -- putStrLn "starting prop_insert_then_delete"      
-  -- quickCheck prop_insert_then_delete
+  putStrLn "starting prop_insert_then_delete"      
+  quickCheck prop_insert_then_delete
 
   putStrLn "starting prop_run_composition"        
   quickCheck prop_run_composition
@@ -124,10 +123,11 @@ prop_insert_increases_length c e =
   length (contents (run [Insert c] e)) == length (contents e) + 1
 
 
-{--
 
---}
+bug1 = let cmds = [Insert '?',Insert 'j',Insert '#',Insert 'r',Insert '\'']
+           edit = Editor {buffer = V.fromList [Ch 'Y',Ch '~',Ch 'Q',Gap,Gap,Gap,Gap,Gap,Ch 'c',Ch '?'], gapStart = 3, gapEnd = 7}
+       in trace cmds edit -- run cmds edit
 
-let bug1 = let cmds = [Insert '?',Insert 'j',Insert '#',Insert 'r',Insert '\'']
-               edit = Editor {buffer = V.fromList [Ch 'Y',Ch '~',Ch 'Q',Gap,Gap,Gap,Gap,Gap,Ch 'c',Ch '?'], gapStart = 3, gapEnd = 7}
-           in run cmds edit
+          
+         
+
