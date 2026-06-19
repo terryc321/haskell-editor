@@ -24,6 +24,8 @@ module Editor
 
 --}
 
+import Command 
+
 type Text = [Char]
 
 data Editor = Editor
@@ -75,12 +77,12 @@ moveRight (Editor {left=l , right=(h:t)}) =
 cursorPosition :: Editor -> Int
 cursorPosition (Editor {left=l , right= _ }) = length l 
 
-data Command
-    = Insert Char
-    | Delete
-    | MoveLeft
-    | MoveRight
-    deriving (Show,Eq)
+-- data Command
+--     = Insert Char
+--     | Delete
+--     | MoveLeft
+--     | MoveRight
+--     deriving (Show,Eq)
 
 
 apply :: Command -> Editor -> Editor

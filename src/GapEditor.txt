@@ -1,0 +1,16 @@
+
+
+copyDown :: Editor -> [(Int,Cell)]
+copyDown e = let buf = buffer e 
+             in copyUp2 0 []             
+  where copyDown2 i acc = case (buf V.! i) of   <<<== ghc says buf not in scop
+                          Gap -> acc
+                          Ch c -> copyDown2 (i-1) ((i,Ch c) : acc)
+=== changed to ===
+
+copyDown :: Editor -> [(Int,Cell)]
+copyDown e = copyUp2 0 []             
+  where copyDown2 i acc = case (buffer e V.! i) of
+                          Gap -> acc
+                          Ch c -> copyDown2 (i-1) ((i,Ch c) : acc)
+

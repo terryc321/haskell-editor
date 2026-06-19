@@ -1,0 +1,282 @@
+
+-- for gap buffer implementation 
+
+module GapEditor
+  ( -- core types
+    -- Editor(..),
+    -- Command(..), -- deduplicated out into Command.hs 
+    -- -- interpreter
+    -- apply,
+    -- run,
+    -- -- observable api
+    -- contents,
+    -- cursorPosition,
+    -- -- primitives
+    -- insert,
+    -- delete,
+    -- moveLeft,
+    -- moveRight,
+    -- --
+    -- empty 
+  ) where 
+
+import Command
+
+import qualified Data.Vector as V 
+import qualified Data.List as L 
+
+
+{--
+
+gap buffer implementation of text buffer 
+
+   [ C C C G G G C C C ]
+           | | |
+            Gap 
+   C are character cells
+   G are gap cells - empty space cells 
+
+
+ Editor {buffer = [Gap,Gap,Gap,Gap,Gap], gapStart = 0, gapEnd = 5}
+
+--}
+
+data Cell
+    = Gap
+    | Ch Char
+    deriving (Show, Eq)
+
+data Editor = Editor
+    { buffer  :: V.Vector Cell
+    , gapStart :: Int
+    , gapEnd :: Int
+    , size :: Int 
+    } deriving (Show , Eq)
+
+
+empty :: Editor 
+empty = let size = 5 -- lets not let this be negative ! 
+        in Editor { buffer = V.replicate size Gap , gapStart = 0 , gapEnd = size - 1 , size = size }
+           
+
+{--
+insert a character
+lets assume there is always room in buffer ,
+place character at start s , increment s
+
+λ> insert 'a' empty
+Editor {buffer = [Ch 'a',Gap,Gap,Gap,Gap], gapStart = 1, gapEnd = 4, size = 5}
+
+λ> insert 'b' $ insert 'a' empty
+Editor {buffer = [Ch 'a',Ch 'b',Gap,Gap,Gap], gapStart = 2, gapEnd = 4, size = 5}
+
+λ> insert 'c' $ insert 'b' $ insert 'a' empty
+Editor {buffer = [Ch 'a',Ch 'b',Ch 'c',Gap,Gap], gapStart = 3, gapEnd = 4, size = 5}
+
+** obs ** when gapStart < gapEnd there is always space in gap 
+
+λ> insert 'd' $ insert 'c' $ insert 'b' $ insert 'a' empty
+Editor {buffer = [Ch 'a',Ch 'b',Ch 'c',Ch 'd',Gap], gapStart = 4, gapEnd = 4, size = 5}
+
+** obs ** when gapStart == gapEnd there is only one free gap left
+
+λ> insert 'e' $ insert 'd' $ insert 'c' $ insert 'b' $ insert 'a' empty
+Editor {buffer = [Ch 'a',Ch 'b',Ch 'c',Ch 'd',Ch 'e'], gapStart = 5, gapEnd = 4, size = 5}
+
+** obs ** when gapStart > gapEnd there is no free gap left
+
+use the condition >= so there will always be a free gap in the gap buffer ,
+we can then use this gap as marker
+
+proper grow = double size of original buffer
+debug grow = increase size by 1 of original buffer
+
+
+--}
+insert :: Char -> Editor -> Editor
+insert ch e  =    let start = gapStart e
+                      end   = gapEnd e
+  in if start >= end
+     then growInsert ch e
+     else plainInsert ch e
+
+    
+plainInsert :: Char -> Editor -> Editor    
+plainInsert ch e =
+  let buf   = buffer e
+      start = gapStart e
+      end   = gapEnd e 
+  in let buf2 = V.update buf (V.fromList [(start, Ch ch)])
+     in e {buffer = buf2 , gapStart = start + 1}
+
+
+
+{--
+ growInsert = grow + plainInsert 
+ we always grow 
+--}
+growInsert :: Char -> Editor -> Editor    
+growInsert ch e = plainInsert ch $ grow e
+
+  -- let buf   = buffer e
+  --     start = gapStart e
+  --     end   = gapEnd e      
+  -- in let buf2 = V.update buf (V.fromList [(start, Ch ch)])
+  --    in e {buffer = buf2 , gapStart = start + 1}
+
+
+{--
+copy up 
+start from 0 index and keep increasing index until we find a gap 
+buf is in scope due to closure
+ordering of (index, Ch c) in acc does not matter - this is all sorted by bulk update
+
+--}
+copyUp :: Editor -> [(Int,Cell)]
+copyUp e = copyUp2 0 []             
+  where
+    copyUp2 :: Int -> [(Int,Cell)] -> [(Int,Cell)]
+    copyUp2 i acc = case (buffer e V.! i) of 
+                          Gap -> acc
+                          Ch c -> copyUp2 (i+1) ((i,Ch c) : acc)
+
+
+{--
+copyDown
+we traverse buffer top down - highest valid index down towards zero
+until we reach a GAP cell
+return list of (Int,Cell) tuples
+
+when we get the copy down results , into the new buffer all the indices need to be
+bumped up by a constant factor k .
+this k is the difference between original smaller buffer and larger buffer.
+--}
+
+copyDown :: Editor -> [(Int,Cell)]
+copyDown e = copyDown2 (V.length (buffer e) - 1) []             
+  where
+    copyDown2 :: Int -> [(Int,Cell)] -> [(Int,Cell)]
+    copyDown2 i acc = case (buffer e V.! i) of 
+                          Gap -> acc
+                          Ch c -> copyDown2 (i-1) ((i,Ch c) : acc)
+
+
+growFixUp :: [(Int,Cell)] -> Int -> [(Int,Cell)]
+growFixUp xs n = map fixup xs
+  where fixup :: (Int,Cell) -> (Int,Cell)
+        fixup (v,cell) = (v+n,cell)
+
+
+
+
+grow :: Editor -> Editor
+grow e =
+  let buf   = buffer e
+      start = gapStart e
+      end   = gapEnd e
+      sz    = size e 
+  in let newSize = sz + 1
+     in let newBuffer = V.replicate newSize Gap
+        in let newBuffer2 = newBuffer V.// (copyUp e)
+           in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz))
+              in Editor { buffer = newBuffer3 , size = newSize , gapStart= start,gapEnd= end + (newSize - sz) }
+              
+  
+
+g0 :: Editor
+g0 = Editor { buffer = V.fromList [Gap,Ch 'z'] , size = 2 , gapStart = 0, gapEnd = 0 }
+
+g1 :: [(Int,Cell)]
+g1 = copyDown g0
+
+g2 :: [(Int,Cell)]
+g2 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'y',Ch 'z'] , size = 3 , gapStart = 0, gapEnd = 0 }
+
+g3 :: [(Int,Cell)]
+g3 = copyDown $ Editor { buffer = V.fromList [Gap,Ch 'x', Ch 'y',Ch 'z'] , size = 4 , gapStart = 0, gapEnd = 0 }
+
+
+
+-- butlast :: [Char] -> [Char]
+-- butlast [] = []
+-- butlast xs = init xs
+
+-- butfirst :: [Char] -> [Char]
+-- butfirst [] = []
+-- butfirst (h:t) = t
+
+-- safeLast :: [Char] -> Maybe Char
+-- safeLast [] = Nothing
+-- safeLast (h:[]) = Just h
+-- safeLast (h:t) = safeLast t
+
+-- safeHead :: [Char] -> Maybe Char
+-- safeHead [] = Nothing
+-- safeHead (h:_) = Just h
+
+-- contents :: Editor -> [Char]
+-- contents (Editor {left=l , right=r}) = (reverse l) ++ r 
+
+
+-- -- delete drops the head of left list if it can
+-- delete :: Editor -> Editor
+-- delete (Editor {left=l , right=r}) = Editor {left= butfirst l,right =r}
+
+-- -- move left will put head of left onto cons right
+-- moveLeft :: Editor -> Editor
+-- moveLeft (Editor {left=[] , right=r})    =  Editor {left=[] , right=r}
+-- moveLeft (Editor {left=(h:t) , right=r}) =  Editor {left= t,right = h : r}
+
+-- -- move right will put head of right onto head left
+-- moveRight :: Editor -> Editor
+-- moveRight (Editor {left=l , right=[] }) = (Editor {left=l , right=[] })
+-- moveRight (Editor {left=l , right=(h:t)}) =
+--    Editor {left= h : l ,right = t}
+
+-- -- position same computation 
+-- cursorPosition :: Editor -> Int
+-- cursorPosition (Editor {left=l , right= _ }) = length l 
+
+-- -- imported from Command.hs 
+-- -- data Command
+-- --     = Insert Char
+-- --     | Delete
+-- --     | MoveLeft
+-- --     | MoveRight
+-- --     deriving (Show,Eq)
+
+-- apply :: Command -> Editor -> Editor
+-- apply (Insert c)  e = insert c e
+-- apply (Delete)    e = delete e
+-- apply (MoveLeft)  e = moveLeft e
+-- apply (MoveRight) e = moveRight e
+
+-- run :: [Command] -> Editor -> Editor
+-- run [] e = e
+-- run (h:t) e = run t (apply h e)
+
+-- -- fallback when Editor to Editor created a single string
+-- -- but we create a similar two lists except first is reversed 
+
+-- -- -- a conversion from one type of editor to this editor ??
+-- -- toRef :: E.Editor -> R.Editor
+-- -- toRef = contents
+
+-- -- represents abc|def
+-- example1 :: Editor
+-- example1 = Editor {left="cba",right= "def"}
+
+-- example2 :: Editor 
+-- example2 = run
+--   [ MoveLeft
+--   , MoveLeft
+--   , Insert 'A'
+--   , MoveRight
+--   , Delete
+--   , MoveRight
+--   ]
+--   example1
+
+
+
+

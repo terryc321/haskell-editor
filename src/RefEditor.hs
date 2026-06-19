@@ -1,10 +1,8 @@
 
-
-
 module RefEditor
   ( -- core types
     Editor(..),
-    Command(..),
+    Command(..), -- deduplicated out into Command.hs 
     -- interpreter
     apply,
     run,
@@ -19,6 +17,8 @@ module RefEditor
     --
     empty 
   ) where 
+
+import Command 
 
 {-- a two linked list editor , the difference here is that the first list
 is in reverse
@@ -84,13 +84,13 @@ moveRight (Editor {left=l , right=(h:t)}) =
 cursorPosition :: Editor -> Int
 cursorPosition (Editor {left=l , right= _ }) = length l 
 
-
-data Command
-    = Insert Char
-    | Delete
-    | MoveLeft
-    | MoveRight
-    deriving (Show,Eq)
+-- imported from Command.hs 
+-- data Command
+--     = Insert Char
+--     | Delete
+--     | MoveLeft
+--     | MoveRight
+--     deriving (Show,Eq)
 
 apply :: Command -> Editor -> Editor
 apply (Insert c)  e = insert c e
