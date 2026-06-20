@@ -1,0 +1,50 @@
+
+gap editor results for length of n inserts 'x' into empty buffer
+
+length = 1
+0.54user 0.21system 0:00.76elapsed 98%CPU (0avgtext+0avgdata 210320maxresident)k
+0inputs+10840outputs (0major+118643minor)pagefaults 0swaps
+enter size of replicate : 
+length = 10000
+0.16user 0.05system 0:00.23elapsed 94%CPU (0avgtext+0avgdata 68980maxresident)k
+0inputs+16outputs (0major+71030minor)pagefaults 0swaps
+enter size of replicate : 
+length = 20000
+0.44user 0.24system 0:00.70elapsed 98%CPU (0avgtext+0avgdata 68816maxresident)k
+0inputs+16outputs (0major+305275minor)pagefaults 0swaps
+enter size of replicate : 
+length = 30000
+1.04user 0.52system 0:01.57elapsed 99%CPU (0avgtext+0avgdata 68616maxresident)k
+0inputs+16outputs (0major+730607minor)pagefaults 0swaps
+enter size of replicate : 
+length = 40000
+1.82user 1.10system 0:02.93elapsed 99%CPU (0avgtext+0avgdata 68688maxresident)k
+0inputs+16outputs (0major+1489839minor)pagefaults 0swaps
+enter size of replicate : 
+length = 50000
+2.82user 1.78system 0:04.61elapsed 100%CPU (0avgtext+0avgdata 68688maxresident)k
+0inputs+16outputs (0major+2421738minor)pagefaults 0swaps
+enter size of replicate : 
+length = 60000
+4.60user 3.32system 0:07.93elapsed 99%CPU (0avgtext+0avgdata 68812maxresident)k
+0inputs+16outputs (0major+4559303minor)pagefaults 0swaps
+enter size of replicate : 
+length = 70000
+6.57user 4.92system 0:11.50elapsed 100%CPU (0avgtext+0avgdata 68880maxresident)k
+0inputs+16outputs (0major+6792362minor)pagefaults 0swaps
+enter size of replicate : 
+length = 80000
+8.68user 6.85system 0:15.52elapsed 100%CPU (0avgtext+0avgdata 68704maxresident)k
+0inputs+16outputs (0major+9108701minor)pagefaults 0swaps
+enter size of replicate : 
+length = 90000
+10.77user 8.47system 0:19.22elapsed 100%CPU (0avgtext+0avgdata 68428maxresident)k
+0inputs+16outputs (0major+10781693minor)pagefaults 0swaps
+enter size of replicate : 
+length = 100000
+13.77user 9.85system 0:23.60elapsed 100%CPU (0avgtext+0avgdata 68836maxresident)k
+0inputs+16outputs (0major+12591371minor)pagefaults 0swaps
+enter size of replicate : 
+length = 110000
+17.60user 10.71system 0:28.28elapsed 100%CPU (0avgtext+0avgdata 68940maxresident)k
+0inputs+16outputs (0major+13535700minor)pagefaults 0swaps

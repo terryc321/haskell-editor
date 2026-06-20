@@ -1,0 +1,48 @@
+Build profile: -w ghc-9.6.7 -O1
+In order, the following will be built (use -v for more details):
+ - haskell-editor-0.1.0.0 (bench:haskell-editor-bench) (file bench/Main.hs changed)
+Preprocessing benchmark 'haskell-editor-bench' for haskell-editor-0.1.0.0...
+Building benchmark 'haskell-editor-bench' for haskell-editor-0.1.0.0...
+[1 of 1] Compiling Main             ( bench/Main.hs, dist-newstyle/build/x86_64-linux/ghc-9.6.7/haskell-editor-0.1.0.0/b/haskell-editor-bench/build/haskell-editor-bench/haskell-editor-bench-tmp/Main.o ) [Source file changed]
+[2 of 2] Linking dist-newstyle/build/x86_64-linux/ghc-9.6.7/haskell-editor-0.1.0.0/b/haskell-editor-bench/build/haskell-editor-bench/haskell-editor-bench [Objects changed]
+Running 1 benchmarks...
+Benchmark haskell-editor-bench: RUNNING...
+benchmarking Editor    with 1000 inserts
+time                 2.941 ms   (2.939 ms .. 2.943 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 2.941 ms   (2.939 ms .. 2.942 ms)
+std dev              6.730 μs   (4.906 μs .. 9.277 μs)
+
+benchmarking GapEditor with 1000 inserts
+time                 293.2 μs   (292.9 μs .. 293.7 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 294.1 μs   (293.8 μs .. 294.5 μs)
+std dev              1.276 μs   (934.3 ns .. 1.820 μs)
+
+benchmarking RefEditor with 1000 inserts
+time                 8.226 μs   (8.219 μs .. 8.232 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 8.218 μs   (8.212 μs .. 8.224 μs)
+std dev              20.74 ns   (17.67 ns .. 25.57 ns)
+
+benchmarking Editor    with 10000 inserts
+time                 488.8 ms   (486.6 ms .. 493.2 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 484.2 ms   (481.6 ms .. 485.7 ms)
+std dev              2.562 ms   (1.207 ms .. 3.559 ms)
+variance introduced by outliers: 19% (moderately inflated)
+
+benchmarking RefEditor with 10000 inserts
+time                 93.36 μs   (93.31 μs .. 93.42 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 93.29 μs   (93.25 μs .. 93.33 μs)
+std dev              143.0 ns   (122.5 ns .. 167.8 ns)
+
+benchmarking GapEditor with 10000 inserts
+time                 135.8 ms   (133.4 ms .. 138.3 ms)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 134.7 ms   (133.7 ms .. 135.7 ms)
+std dev              1.598 ms   (1.117 ms .. 2.389 ms)
+variance introduced by outliers: 11% (moderately inflated)
+
+Benchmark haskell-editor-bench: FINISH

@@ -1,0 +1,92 @@
+Build profile: -w ghc-9.6.7 -O1
+In order, the following will be built (use -v for more details):
+ - haskell-editor-0.1.0.0 (bench:haskell-editor-bench) (file bench/Main.hs changed)
+Preprocessing benchmark 'haskell-editor-bench' for haskell-editor-0.1.0.0...
+Building benchmark 'haskell-editor-bench' for haskell-editor-0.1.0.0...
+[1 of 1] Compiling Main             ( bench/Main.hs, dist-newstyle/build/x86_64-linux/ghc-9.6.7/haskell-editor-0.1.0.0/b/haskell-editor-bench/build/haskell-editor-bench/haskell-editor-bench-tmp/Main.o ) [Source file changed]
+[2 of 2] Linking dist-newstyle/build/x86_64-linux/ghc-9.6.7/haskell-editor-0.1.0.0/b/haskell-editor-bench/build/haskell-editor-bench/haskell-editor-bench [Objects changed]
+Running 1 benchmarks...
+Benchmark haskell-editor-bench: RUNNING...
+benchmarking RefEditor with 1_000 inserts
+time                 7.782 μs   (7.716 μs .. 7.816 μs)
+                     1.000 R²   (0.999 R² .. 1.000 R²)
+mean                 7.796 μs   (7.742 μs .. 7.812 μs)
+std dev              93.70 ns   (15.71 ns .. 197.9 ns)
+
+benchmarking RefEditor with 10_000 inserts
+time                 92.07 μs   (92.01 μs .. 92.17 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 92.10 μs   (92.02 μs .. 92.25 μs)
+std dev              337.4 ns   (168.6 ns .. 682.2 ns)
+
+benchmarking RefEditor with 20_000 inserts
+time                 205.8 μs   (205.5 μs .. 206.1 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 205.3 μs   (205.1 μs .. 205.5 μs)
+std dev              687.1 ns   (565.1 ns .. 850.6 ns)
+
+benchmarking RefEditor with 40_000 inserts
+time                 489.9 μs   (489.2 μs .. 490.5 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 488.9 μs   (488.1 μs .. 489.6 μs)
+std dev              2.435 μs   (1.976 μs .. 3.232 μs)
+
+benchmarking RefEditor with 60_000 inserts
+time                 876.1 μs   (874.5 μs .. 877.6 μs)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 874.8 μs   (873.5 μs .. 876.6 μs)
+std dev              4.981 μs   (4.083 μs .. 6.704 μs)
+
+benchmarking RefEditor with 80_000 inserts
+time                 1.376 ms   (1.373 ms .. 1.379 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.373 ms   (1.370 ms .. 1.376 ms)
+std dev              11.68 μs   (9.724 μs .. 14.42 μs)
+
+benchmarking RefEditor with 100_000 inserts
+time                 1.972 ms   (1.965 ms .. 1.979 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 1.979 ms   (1.974 ms .. 1.984 ms)
+std dev              17.79 μs   (14.24 μs .. 23.00 μs)
+
+benchmarking RefEditor with 200_000 inserts
+time                 5.292 ms   (5.267 ms .. 5.322 ms)
+                     1.000 R²   (1.000 R² .. 1.000 R²)
+mean                 5.283 ms   (5.253 ms .. 5.306 ms)
+std dev              81.59 μs   (61.55 μs .. 130.5 μs)
+
+benchmarking RefEditor with 400_000 inserts
+time                 14.62 ms   (14.48 ms .. 14.76 ms)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 14.77 ms   (14.62 ms .. 14.96 ms)
+std dev              442.2 μs   (277.8 μs .. 695.9 μs)
+
+benchmarking RefEditor with 600_000 inserts
+time                 26.63 ms   (26.07 ms .. 27.26 ms)
+                     0.998 R²   (0.997 R² .. 1.000 R²)
+mean                 26.65 ms   (26.19 ms .. 27.00 ms)
+std dev              909.6 μs   (384.3 μs .. 1.490 ms)
+variance introduced by outliers: 10% (moderately inflated)
+
+benchmarking RefEditor with 800_000 inserts
+time                 35.86 ms   (35.28 ms .. 36.58 ms)
+                     0.998 R²   (0.996 R² .. 0.999 R²)
+mean                 36.68 ms   (35.86 ms .. 37.88 ms)
+std dev              2.168 ms   (1.336 ms .. 3.590 ms)
+variance introduced by outliers: 18% (moderately inflated)
+
+benchmarking RefEditor with 1_000_000 inserts
+time                 45.49 ms   (43.43 ms .. 47.06 ms)
+                     0.997 R²   (0.993 R² .. 0.999 R²)
+mean                 50.42 ms   (48.88 ms .. 53.41 ms)
+std dev              4.129 ms   (2.073 ms .. 6.820 ms)
+variance introduced by outliers: 29% (moderately inflated)
+
+benchmarking RefEditor with 2_000_000 inserts
+time                 107.0 ms   (102.8 ms .. 112.8 ms)
+                     0.997 R²   (0.992 R² .. 0.999 R²)
+mean                 106.5 ms   (101.6 ms .. 114.8 ms)
+std dev              10.50 ms   (3.419 ms .. 18.51 ms)
+variance introduced by outliers: 31% (moderately inflated)
+
+Benchmark haskell-editor-bench: FINISH

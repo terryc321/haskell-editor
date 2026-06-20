@@ -1,0 +1,19 @@
+
+with GapEditor on plain insert 100,000 'x' characters takes 24 seconds
+
+benchGapEditor :: IO ()
+benchGapEditor = do let commands = replicate 100000 (G.Insert 'x')
+                    let eout = G.run commands G.empty
+                    print (length (G.contents eout))
+
+
+Running 1 benchmarks...
+Benchmark haskell-editor-bench: RUNNING...
+Hello from benchmark!
+100000
+Finished the first benchmark!
+Benchmark haskell-editor-bench: FINISH
+
+real    0m24.646s
+user    0m14.493s
+sys     0m10.193s

@@ -20,7 +20,9 @@ module GapEditor
     -- --
     empty,
     mkEditor,
-    trace    
+    trace,
+    -- --
+    charCount     
   ) where 
 
 import Command
@@ -41,10 +43,19 @@ data Editor = Editor
 
 
 contents :: Editor -> [Char]
-contents e =
-  let xs = V.toList (buffer e)
-  in let ys = filter (\e -> not (e == Gap)) xs  -- let map (\(Ch c) -> c) $
-     in map (\(Ch c) -> c) ys
+contents e = let xs = V.toList (buffer e)
+                 ys = filter (\e -> not (e == Gap)) xs
+             in map (\(Ch c) -> c) ys
+
+  -- let map (\(Ch c) -> c) $                
+-- contents e = V.toList $ V.filter (notGap) (buffer e)
+--   where notGap = (\e -> e /= Gap)
+
+
+
+charCount :: Editor -> Int
+charCount e = V.length (V.filter (\e -> e /= Gap) (buffer e))
+
 
 
 {--
@@ -196,7 +207,7 @@ grow e =
       start = gapStart e
       end   = gapEnd e
       sz    = editSize e  
-  in let newSize = sz + 2
+  in let newSize = sz * 2 --sz + 2
      in let newBuffer = V.replicate newSize Gap
         in let newBuffer2 = newBuffer V.// (copyUp e)
            in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz - 1))
@@ -252,3 +263,10 @@ g2 = Editor { buffer = V.fromList [Ch 'z',Gap] ,gapStart = 1, gapEnd = 1 }
 g3 :: Editor
 g3 = grow $ g2 
 
+g4 :: Editor
+g4 = let cmds = replicate 1000 (Insert 'x')
+     in run cmds empty
+
+-- g5 :: Int
+-- g5 = 
+        
