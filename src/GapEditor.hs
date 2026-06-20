@@ -22,7 +22,8 @@ module GapEditor
     mkEditor,
     trace,
     -- --
-    charCount     
+    charCount,
+    exec 
   ) where 
 
 import Command
@@ -249,6 +250,8 @@ trace cmd e = do putStrLn $ "Tracer started "
                  putStrLn $ "editor = " ++ show e
                  trace2 cmd e
                     
+exec :: [Command] -> [Char]
+exec cmds = contents (run cmds empty)
 
 
 g0 :: Editor

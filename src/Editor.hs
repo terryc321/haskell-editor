@@ -14,7 +14,8 @@ module Editor
     delete,
     moveLeft,
     moveRight,
-    empty
+    empty,
+    exec
   ) where 
 
 {-- a two list Editor
@@ -94,6 +95,10 @@ apply (MoveRight) e = moveRight e
 run :: [Command] -> Editor -> Editor
 run [] e = e
 run (h:t) e = run t (apply h e)
+
+exec :: [Command] -> [Char]
+exec cmds = contents (run cmds empty)
+
 
 example2 = run
   [ MoveLeft

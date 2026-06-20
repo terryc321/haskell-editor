@@ -63,7 +63,8 @@ library
                       Editor,
                       RefEditor,
                       Command,
-                      GapEditor
+                      GapEditor,
+                      MutRefEditor
                       
 
     -- Modules included in this library but not exported.
@@ -122,7 +123,9 @@ test-suite haskell-editor-test
     -- Modules included in this executable, other than Main.
     other-modules:  EditorSpec,
                     RefEditorSpec,
-                    GapEditorSpec
+                    GapEditorSpec,
+                    MutRefEditorSpec                    
+
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
