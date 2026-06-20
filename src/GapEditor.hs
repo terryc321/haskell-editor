@@ -145,7 +145,7 @@ insert ch e  =
   let start = gapStart e
       end   = gapEnd e
   in if start >= end - 1
-     then e -- growInsert ch e -- ignore growing
+     then growInsert ch e -- ignore growing
      else plainInsert ch e
     
 plainInsert :: Char -> Editor -> Editor    
@@ -199,8 +199,8 @@ grow e =
   in let newSize = sz + 2
      in let newBuffer = V.replicate newSize Gap
         in let newBuffer2 = newBuffer V.// (copyUp e)
-           in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz))
-              in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + (newSize - sz) - 1 }
+           in let newBuffer3 = newBuffer2 V.// (growFixUp (copyDown e) (newSize - sz - 1))
+              in Editor { buffer = newBuffer3 , gapStart= start,gapEnd= end + newSize - sz - 1  }
               
 
 {--
@@ -239,4 +239,16 @@ trace cmd e = do putStrLn $ "Tracer started "
                  trace2 cmd e
                     
 
+
+g0 :: Editor
+g0 = Editor { buffer = V.fromList [Gap,Ch 'z'] ,gapStart = 0, gapEnd = 0 }
+
+g1 :: Editor
+g1 = grow $ g0
+
+g2 :: Editor
+g2 = Editor { buffer = V.fromList [Ch 'z',Gap] ,gapStart = 1, gapEnd = 1 }
+
+g3 :: Editor
+g3 = grow $ g2 
 
