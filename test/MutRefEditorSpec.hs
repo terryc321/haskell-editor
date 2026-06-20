@@ -8,12 +8,18 @@ import MutRefEditor
 import qualified RefEditor as R
 
 import Command
+-- import Control.Monad.ST
 
+import Control.Monad.ST (runST)
 
 runTests :: IO ()
 runTests = do
   putStrLn "starting MutRefEditorSpec tests"
-  -- quickCheck prop_run
+  quickCheck prop_correct  
+  quickCheck prop_run_composition
+  quickCheck prop_run
+  putStrLn "completed RefEditorSpec tests"
+
   -- quickCheck prop_insert_increases_length
   -- quickCheck prop_run_consistency
   -- quickCheck prop_insert_length
@@ -23,16 +29,8 @@ runTests = do
   -- quickCheck prop_move_left_right_preserves_contents
   -- quickCheck prop_insert_then_delete_length
   -- quickCheck prop_insert_then_delete
-  -- quickCheck prop_run_composition
-  quickCheck prop_correct  
-  putStrLn "completed RefEditorSpec tests"
-
   -- quickCheck prop_editor_matches_reference
 
-
-prop_correct :: [Command] -> Bool
-prop_correct cs =
-  exec cs == R.exec cs
 
 instance Arbitrary Command where
   arbitrary =
@@ -43,17 +41,55 @@ instance Arbitrary Command where
       , pure MoveRight
       ]
 
+prop_correct :: [Command] -> Bool
+prop_correct cs =
+  exec cs == R.exec cs
+
+-- prop_run_composition :: [Command] -> [Command] -> Editor -> Bool
+
+-- we have two editors ! 
+prop_run_composition :: [Command] -> [Command] -> Bool
+prop_run_composition xs ys = 
+  runST $ do
+    e1 <- empty
+    run (xs ++ ys) e1
+    e2 <- empty
+    run xs e2
+    run ys e2
+    c1 <- contents e1
+    c2 <- contents e2
+    pure $ c1 == c2
+
+prop_run :: Bool
+prop_run = 
+    runST $ do
+    e1 <- empty
+    e2 <- empty
+    run [] e2
+    c1 <- contents e1
+    c2 <- contents e2
+    pure $ c1 == c2
+    
+
+
+  --   runST $ do
+  --   e <- empty
+  --   pass1 <- run (xs + ys) e
+  --   pass2 <- run ys (run xs e)
+  --   pure $ pass1 == pass2
+  -- --   ...
+  -- -- run (xs ++ ys) e
+  -- -- == run ys (run xs e)
+
 
 {--
+
+
 
 -- prop_editor_matches_reference :: [Command] -> Editor -> Bool
 -- prop_editor_matches_reference cmds e =
 --   contents (run cmds e)  == refRun cmds (contents e)
 
-prop_run_composition :: [Command] -> [Command] -> Editor -> Bool
-prop_run_composition xs ys e =
-  run (xs ++ ys) e
-  == run ys (run xs e)
 
 prop_insert_then_delete :: Char -> Editor -> Bool
 prop_insert_then_delete c e =
@@ -95,23 +131,21 @@ prop_insert_length c e =
   length (contents (run [Insert c] e))
   == length (contents e) + 1
 
-instance Arbitrary Editor where
+instance Arbitrary RefEditor where
   arbitrary = do
     xs <- arbitrary
     ys <- arbitrary
-    return (Editor { left = xs, right = ys })
+    return (Editor { left = (reverse xs), right = ys })
 
 prop_run_consistency :: [Command] -> Editor -> Bool
 prop_run_consistency cmds e =
   run cmds e == run cmds e
   
 
-prop_run :: Editor -> Bool
-prop_run e = run [] e == e
 
 prop_insert_increases_length :: Char -> Editor -> Bool
 prop_insert_increases_length c e =
   length (contents (run [Insert c] e)) == length (contents e) + 1
-
-
 --}
+
+

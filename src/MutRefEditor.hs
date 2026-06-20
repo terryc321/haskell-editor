@@ -71,10 +71,19 @@ cursorPosition e = do
   pure $ length left
 
 run :: [Command] -> Editor s -> ST s ()
-run [] _ = pure ()
-run (c:cs) e = do
-  apply c e
-  run cs e
+run [] e = pure ()
+run (c:cs) e = do  apply c e
+                   run cs e
+
+-- run :: [Command] -> Editor s -> ST s [Char]
+-- run [] e = do left <- readSTRef (leftRef e)
+--               right <- readSTRef (rightRef e)
+--               pure $ reverse left ++ right
+-- run (c:cs) e = do
+--   apply c e
+--   run cs e
+
+
 
 apply :: Command -> Editor s -> ST s ()
 apply (Insert c) e = insert c e
@@ -88,7 +97,8 @@ contents e = do
   l <- readSTRef (leftRef e)
   r <- readSTRef (rightRef e)
   pure (reverse l ++ r)
-
+  
+  
 exec :: [Command] -> [Char]
 exec cmds = runST $ do
   e <- empty
