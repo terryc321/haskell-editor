@@ -28,28 +28,67 @@ record GapBuffer =
   gapLeft  :: "nat"
   gapRight :: "nat"
 
+(* what constitutes a valid buffer , 
+ gapLeft gapRight are natural numbers 
+ since gapLeft , gapRight are natural numbers -- maybe unsigned long long in c 
+ they cannot be negative , 
+ even though they cannot we add it as a redundant check 
+*)
+definition valid :: "GapBuffer \<Rightarrow> bool" where
+  "valid gb \<equiv>
+      gapLeft gb \<le> gapRight gb
+    \<and> gapRight gb < length (buffer gb)
+    \<and> gapRight gb \<ge> 0"
 
+
+fun replace :: "char \<Rightarrow> nat \<Rightarrow> char list \<Rightarrow> char list" where
+  "replace c _ [] = []"
+| "replace c 0 (h # t) = c # t"
+| "replace c (Suc n) (h # t) = h # replace c n t"
+
+(*unit tests for replace*)
+value " ''abc'' " (*abc*)
+value " replace (CHR ''d'') 0 ''abc'' "  (*dbc*)
+value " replace (CHR ''d'') 1 ''abc'' "  (*adc*)
+value " replace (CHR ''d'') 2 ''abc'' "  (*abd*)
+value " replace (CHR ''d'') 3 ''abc'' "  (*abc*)
+
+(* we should have a single constructor for gap buffers 
+in the mean time all we need to ensure is that 
+ for some buffer 
+
+ Let gb be GapBuffer
+  [ _ _ _ ]  buffer length 3 
+    0 1 2    gapLeft can be 0 1 2
+             gapRight can be gapLeft .. (length (buffer gb) - 1)
+
+  valid b \<equiv> \<forall> b .   (gapLeft b \<ge> 0) 
+                  \<and> (gapLeft b < (length b)) 
+                  \<and> (gapLeft b \<le> gapRight b)
+
+remember to wrap (if .. then .. else .. clause in parens )
+*)
+
+definition mkBuffer :: "nat \<Rightarrow> GapBuffer" where
+  "mkBuffer n = (if n < 5 then
+                    let m = 5 in   \<lparr> buffer = replicate m CHR ''/'',
+                                     gapLeft = 0, 
+                                     gapRight = m - 1 \<rparr>
+                 else \<lparr> buffer = replicate n CHR ''/'',
+                        gapLeft = 0, 
+                        gapRight = n - 1 \<rparr>)"
 
 (* an empty buffer with 10 characters *)
 definition empty10 :: "GapBuffer" where
-  "empty10 =
-     \<lparr> buffer = replicate 10 CHR ''$'',
-       gapLeft = 0,
-       gapRight = 10 \<rparr>"
+  "empty10 = mkBuffer 10"
 
 definition empty3 :: "GapBuffer" where
-  "empty3 =
-     \<lparr> buffer = replicate 3 CHR ''$'',
-       gapLeft = 0,
-       gapRight = 3 \<rparr>"
+  "empty3 = mkBuffer 3"
 
 
-(* an empty buffer of size 0 with 0 characters - interesting ! *)
+(* an empty buffer of size 0 - this will revert to small nonzero length buffer - five i think *)
 definition empty0 :: "GapBuffer" where
-  "empty0 =
-     \<lparr> buffer = [],
-       gapLeft = 0,
-       gapRight = 0 \<rparr>"
+  "empty0 = mkBuffer 0"
 
 (* standard ml uses #"a" to represent a character - usually a byte - unicode came much much later *)
 value " CHR ''a''  "
@@ -60,12 +99,7 @@ value " CHR ''\<alpha>''  "
 
 (* an buffer of size 1 with 1 character capacity - also interesting ! *)
 definition empty1 :: "GapBuffer" where
-  "empty1 =
-     \<lparr> buffer = [CHR ''$''],
-       gapLeft = 0,
-       gapRight = 0 \<rparr>"
-
-
+  "empty1 = mkBuffer 1"
 
 (* we can see the value of empty10 *)
 value "empty10"
@@ -125,17 +159,6 @@ value " replace (CHR ''d'') 2 ''abc'' "  (*Some abd*)
 value " replace (CHR ''d'') 3 ''abc'' "  (*None rather than Some abc*)
 *)
 
-fun replace :: "char \<Rightarrow> nat \<Rightarrow> char list \<Rightarrow> char list" where
-  "replace c _ [] = []"
-| "replace c 0 (h # t) = c # t"
-| "replace c (Suc n) (h # t) = h # replace c n t"
-
-(*unit tests for replace*)
-value " ''abc'' " (*abc*)
-value " replace (CHR ''d'') 0 ''abc'' "  (*dbc*)
-value " replace (CHR ''d'') 1 ''abc'' "  (*adc*)
-value " replace (CHR ''d'') 2 ''abc'' "  (*abd*)
-value " replace (CHR ''d'') 3 ''abc'' "  (*abc*)
 
 
 
@@ -219,8 +242,8 @@ definition move_left :: "GapBuffer \<Rightarrow> GapBuffer" where
   "move_left gb =
      (if gapLeft gb > 0 then     
      let ch = lookup (gapLeft gb -1) (buffer gb)         
-     in let buf2 = replace ch (gapRight gb - 1) (buffer gb) 
-        in let buf3 = replace (CHR ''$'') (gapLeft gb - 1) buf2
+     in let buf2 = replace ch (gapRight gb) (buffer gb) 
+        in let buf3 = replace (CHR ''/'') (gapLeft gb - 1) buf2
         in
      gb\<lparr> buffer := buf3  ,
          gapLeft := gapLeft gb - 1,
@@ -254,15 +277,17 @@ r \<ge> length buffer : no movement
 r < length buffer - movement 
    if r = length buffer - 1 then r is the last valid index into ''array'' char list
 
+  [ _ _ _ ] 
+    0 1 2
 
 *)
 definition move_right :: "GapBuffer \<Rightarrow> GapBuffer" where
   "move_right gb =
-    (if gapRight gb \<ge> length (buffer gb)
+    (if gapRight gb \<ge> (length (buffer gb) - 1)
      then gb
-     else let ch = lookup (gapRight gb) (buffer gb)         
+     else let ch = lookup (gapRight gb + 1) (buffer gb)         
           in let buf2 = replace ch (gapLeft gb) (buffer gb)            
-          in let buf3 = replace (CHR ''$'') (gapRight gb) buf2 
+          in let buf3 = replace (CHR ''/'') (gapRight gb + 1) buf2 
           in 
           gb\<lparr> buffer := buf3 , 
               gapLeft := gapLeft gb + 1,  
@@ -292,9 +317,9 @@ value " replace (CHR ''y'') 3 ''abcdxxxxxx'' "
 (*move_right unit tests - expect no movement on an empty buffer 
 also useful for move_left as it has same semantics *)
 value "empty10" (* initially empty buffer gapLeft = 0 gapRight = 10*)
-value "gapRight (move_right empty10) = 10"
-value "gapRight (move_right (move_right empty10)) = 10"
-value "gapRight (move_right (move_right (move_right empty10))) = 10" 
+value "gapRight (move_right empty10) = 9"
+value "gapRight (move_right (move_right empty10)) = 9"
+value "gapRight (move_right (move_right (move_right empty10))) = 9" 
 
 (*move_right n times on empty buffer then insert is same as just insert on empty buffer *)
 value "insert (CHR ''d'') (move_right empty10)"
@@ -308,18 +333,29 @@ value "insert (CHR ''c'') (insert (CHR ''b'') (insert (CHR ''a'') empty10))" (*a
 
 value "move_left (insert (CHR ''c'') (insert (CHR ''b'') (insert (CHR ''a'') empty10)))" (*abc*)
 value "insert (CHR ''d'') (move_left (insert (CHR ''c'') 
-       (insert (CHR ''b'') (insert (CHR ''a'') empty10))))" (*abc*)
+       (insert (CHR ''b'') (insert (CHR ''a'') empty10))))" (*abdc*)
 
 
 
-(* delete a character *)
+(* delete a character 
+
+[ _ _ _ ] 
+  0 1 2  
+ pre  :  gapLeft > 0 
+ post :  gapLeft reduced by 1 , gapRight no change , buffer no change 
+ contents buffer are determined by gapLeft gapRight
+
+ pre : gapLeft \<le> 0 
+ post : no change in gap buffer 
+
+*)
 definition delete_char :: "GapBuffer \<Rightarrow> GapBuffer" where
   "delete_char gb =
-     (if gapLeft gb = 0 then gb 
-     else let buf = replace (CHR ''$'') (gapLeft gb - 1) (buffer gb)
+     (if gapLeft gb \<le> 0 then gb 
+     else let buf = replace (CHR ''/'') (gapLeft gb - 1) (buffer gb)
           in gb\<lparr> buffer := buf, 
                  gapLeft := gapLeft gb - 1,
-                 gapRight := gapRight gb + 1 \<rparr>)"
+                 gapRight := gapRight gb \<rparr>)"
 
 (*delete unit tests*)
 value "delete_char empty10" 
@@ -362,12 +398,31 @@ value " let s = ''abcdef'' in
         let y = drop 2 s in
            y @ x " (*cdefab*)
 
+(*  abc///def 
+    012345678 
+*)
+value "drop 5 ''abc///def'' "   (* \<Longrightarrow> /def  *)
 
+(* 
+ gb is the GapBuffer
+
+ [ _ _ _ / / / _ _ ] 
+   0 1 2 3 4 5 6 7
+
+ gapLeft  gb = 3
+ gapRight gb = 5
+ 
+ before = take (gapLeft gb) (buffer gb)
+ after  = drop (gapRight gb)
+ contents = before ++ after 
+
+*)
 definition contents :: "GapBuffer \<Rightarrow> char list" where
   "contents gb = (let buf = buffer gb in
-                 let before = take (gapLeft gb) buf in 
-                 let after  = drop (gapRight gb) buf in 
-                 before @ after)"
+                  let before = take (gapLeft gb) buf in 
+                  let after  = drop (gapRight gb + 1) buf in 
+                  before @ after
+                 )"
 
 (*contents unit tests - as we move left the gap splits the text into before and after 
 check visually that contents preserves the text and ignores the gap 
@@ -376,6 +431,7 @@ check visually that contents preserves the text and ignores the gap
 value "abcd0" (*abcd///...*)
 
 value "contents abcd0" (*abcd*)
+value "contents (move_left abcd0)" (*abcd*)
 value "contents empty10" (*[]*)
 
 value "(move_left abcd0)" (*abc////d*)
@@ -391,14 +447,9 @@ value "(move_left (move_left (move_left (move_left abcd0))))" (*////abcd*)
 value "contents (move_left (move_left (move_left (move_left abcd0))))" (*abcd*)
 
 
-(* what constitutes a valid buffer , gapLeft gapRight are natural numbers *)
-definition valid :: "GapBuffer \<Rightarrow> bool" where
-  "valid gb \<equiv>
-      gapLeft gb \<le> gapRight gb
-    \<and> gapRight gb \<le> length (buffer gb)"
-
+(* do not make buffers on the fly -- only use mkBuffer ! *)
 definition garb1 :: "GapBuffer" where
-  "garb1 =
+  "garb1 = 
      \<lparr> buffer = [CHR ''$''],
        gapLeft = 1,
        gapRight = 1 \<rparr>"
@@ -415,12 +466,48 @@ value "move_right (move_left (move_left (move_right garb1)))"
 value "insert (CHR ''b'') (move_right (move_left (move_left (move_right garb1))))"
 value "delete_char (move_right (move_left (move_left (move_right garb1))))"
 
+(*
+ 1. valid gb \<Longrightarrow> contents (move_left gb) = contents gb
+Auto Quickcheck found a counterexample:
+  gb = \<lparr>buffer = [CHR 0xFF, CHR 0xFF], gapLeft = 1, gapRight = 1\<rparr>
+Evaluated terms:
+  contents (move_left gb) = [CHR 0xFF]
+  contents gb = []
+*)
+
+
+(* two [CHR 0xFF , CHR 0xFF] *)
+definition buf2 :: "GapBuffer" where
+  "buf2 = \<lparr> buffer = [CHR 0xFF , CHR 0xFF ],
+     gapLeft = 1,
+     gapRight = 1 \<rparr>"
+
+value "buf2"
+value "move_left buf2"
+value "contents buf2"
+value "contents (move_left buf2)"
+
+definition buf1 :: "GapBuffer" where
+  "buf1 = \<lparr> buffer = [CHR 0xFF ],
+     gapLeft = 0,
+     gapRight = 0 \<rparr>"
+
+value "buf1"
+value "move_left buf1"
+value "contents buf1"
+value "contents (move_left buf1)"
+
+value "empty10"
+value "move_left empty10"
+value "contents empty10"
+value "contents (move_left empty10)"
+
+value "contents (move_left empty10)"
 lemma contents_move_left:
   "valid gb \<Longrightarrow> contents (move_left gb) = contents gb"
 proof
   by auto
-qed
-
+  
 
 
 
