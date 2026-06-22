@@ -2,6 +2,16 @@ theory GapBuffer
   imports Main   
 begin
 
+(* write a fixed sized buffer of 10k say , only use that *)
+(* grow -- translates to save work , recompile and use a 100k buffer *)
+(* each buffer optimised to work just on that size of buffer *)
+
+(* we can see a list of parameters we can set for nitpick using nitpick_params  *)
+(* nitpick_params [verbose=true,card=1-50] *)
+(* nitpick_params [verbose=true] *)
+(*lets try prove something that should hold true *)
+
+
 (* Invariant:
 
    buffer = text before gap ++ gap ++ text after gap
@@ -39,6 +49,50 @@ definition valid :: "GapBuffer \<Rightarrow> bool" where
       gapLeft gb \<le> gapRight gb
     \<and> gapRight gb < length (buffer gb)
     \<and> gapRight gb \<ge> 0"
+
+(* 
+ gb is the GapBuffer
+
+ [ _ _ _ / / / _ _ ] 
+   0 1 2 3 4 5 6 7
+
+ gapLeft  gb = 3
+ gapRight gb = 5
+ 
+ before = take (gapLeft gb) (buffer gb)
+ after  = drop (gapRight gb)
+ contents = before ++ after 
+
+*)
+definition contents :: "GapBuffer \<Rightarrow> char list" where
+  "contents gb = (let buf = buffer gb in
+                  let before = take (gapLeft gb) buf in 
+                  let after  = drop (gapRight gb + 1) buf in 
+                  before @ after
+                 )"
+
+(*contents unit tests - as we move left the gap splits the text into before and after 
+check visually that contents preserves the text and ignores the gap 
+*)
+
+value "abcd0" (*abcd///...*)
+
+value "contents abcd0" (*abcd*)
+value "contents (move_left abcd0)" (*abcd*)
+value "contents empty10" (*[]*)
+
+value "(move_left abcd0)" (*abc////d*)
+value "contents (move_left abcd0)" (*abcd*)
+
+value "(move_left (move_left abcd0))" (*ab////cd*)
+value "contents (move_left (move_left abcd0))" (*abcd*)
+
+value "(move_left (move_left (move_left abcd0)))" (*a///bcd*)
+value "contents (move_left (move_left (move_left abcd0)))" (*abcd*)
+
+value "(move_left (move_left (move_left (move_left abcd0))))" (*////abcd*)
+value "contents (move_left (move_left (move_left (move_left abcd0))))" (*abcd*)
+
 
 
 fun replace :: "char \<Rightarrow> nat \<Rightarrow> char list \<Rightarrow> char list" where
@@ -187,11 +241,12 @@ value " lookup 123 ''abc''"  (*!*)
 
 
 
+
 (* insert a character 
-lets keep gap buffer constant size for now 
-can insert a character if (gapRight gb) - (gapLeft gb) > 0
+can insert a character if (gapRight gb) > (gapLeft gb) 
+otherwise grow and insert
 *)
-definition insert :: "char \<Rightarrow> GapBuffer \<Rightarrow> GapBuffer" where
+fun insert :: "char \<Rightarrow> GapBuffer \<Rightarrow> GapBuffer" where
   "insert c gb =   
    (if (gapLeft gb) < (gapRight gb)  
     then
@@ -207,6 +262,63 @@ value " insert (CHR ''c'') (insert (CHR ''b'') (insert (CHR ''a'') empty3)) " (*
 (* next one *abc* , notice how it does not include d  *)
 value " insert (CHR ''d'') 
         (insert (CHR ''c'') (insert (CHR ''b'') (insert (CHR ''a'') empty3))) " 
+
+
+(* 
+
+grow ?
+
+char list
+gapLeft
+gapRight
+
+ grow will double the size of the buffer 
+ should we limit the size of the gap ? 
+ 
+ [ _ _ _ ]  length = 3 gapLeft = 0 gapRight = \<ge>gapLeft && < length
+   0 1 2 
+
+ [ _ _ _ _ _ _ ]
+   0 1 2 3 4 5
+
+if gapright is at length-1 in gp1 \<rightarrow> gapright2 is at length2 -1 in gp2 
+let diff = length-1 - gapright , diff=0 means gapright is at end of buffer
+
+gapleft2 stays same ? 
+gapright2 assigned ?  
+
+ok we grow , but did we preserve the contents of the buffer 
+
+//let space2 = replicate (sz2 - (length before) - (length after)) (CHR ''/'') in
+
+*)
+
+definition grow :: "GapBuffer \<Rightarrow> GapBuffer" where
+  "grow gb = (let buf    = buffer gb in 
+              let sz     = length buf in
+              let sz2    = (sz * 2) in
+              let before = take (gapLeft gb) buf in 
+              let after  = drop (gapRight gb + 1) buf in 
+              let diff2  = sz - (gapRight gb) in
+              let left2  = gapLeft gb in
+              let right2 = sz2 - 1 - diff2 in 
+              let space2 = replicate ((gapRight gb) - (gapLeft gb) + 1) (CHR ''/'') in               
+              let buf2   = before @ space2 @ after in
+    \<lparr> buffer = buf2 , gapLeft = left2 , gapRight = right2 \<rparr>)"
+
+value "insert (CHR ''b'') (insert (CHR ''a'') empty10)"
+value "grow (insert (CHR ''b'') (insert (CHR ''a'') empty10))"
+value "length (buffer (grow (insert (CHR ''b'') (insert (CHR ''a'') empty10))))"
+
+value " let gb = \<lparr>buffer = ''abc/'', gapLeft = 3, gapRight = 3\<rparr> in 
+        (contents (grow gb) = contents gb) " 
+value " let gb = \<lparr>buffer = [CHR 0xFF, CHR 0xFF], gapLeft = 0, gapRight = 0\<rparr> in 
+         (grow gb , gb , contents (grow gb) , contents gb , contents (grow gb) = contents gb) "
+
+lemma contents_grow:
+  "valid gb \<Longrightarrow> contents (grow gb) = contents gb" 
+(*  sledgehammer*)
+  by nitpick [timeout=9999]
 
 
 (* move a char list two hyphens ''  *)
@@ -243,13 +355,12 @@ definition move_left :: "GapBuffer \<Rightarrow> GapBuffer" where
      (if gapLeft gb > 0 then     
      let ch = lookup (gapLeft gb -1) (buffer gb)         
      in let buf2 = replace ch (gapRight gb) (buffer gb) 
-        in let buf3 = replace (CHR ''/'') (gapLeft gb - 1) buf2
-        in
-     gb\<lparr> buffer := buf3  ,
+     in                
+     gb\<lparr> buffer := buf2  ,
          gapLeft := gapLeft gb - 1,
          gapRight := gapRight gb - 1 \<rparr>
      else gb)"
-
+ (* in let buf3 = replace (CHR ''/'') (gapLeft gb - 1) buf2 in *)
 
 
 (* *)
@@ -403,49 +514,6 @@ value " let s = ''abcdef'' in
 *)
 value "drop 5 ''abc///def'' "   (* \<Longrightarrow> /def  *)
 
-(* 
- gb is the GapBuffer
-
- [ _ _ _ / / / _ _ ] 
-   0 1 2 3 4 5 6 7
-
- gapLeft  gb = 3
- gapRight gb = 5
- 
- before = take (gapLeft gb) (buffer gb)
- after  = drop (gapRight gb)
- contents = before ++ after 
-
-*)
-definition contents :: "GapBuffer \<Rightarrow> char list" where
-  "contents gb = (let buf = buffer gb in
-                  let before = take (gapLeft gb) buf in 
-                  let after  = drop (gapRight gb + 1) buf in 
-                  before @ after
-                 )"
-
-(*contents unit tests - as we move left the gap splits the text into before and after 
-check visually that contents preserves the text and ignores the gap 
-*)
-
-value "abcd0" (*abcd///...*)
-
-value "contents abcd0" (*abcd*)
-value "contents (move_left abcd0)" (*abcd*)
-value "contents empty10" (*[]*)
-
-value "(move_left abcd0)" (*abc////d*)
-value "contents (move_left abcd0)" (*abcd*)
-
-value "(move_left (move_left abcd0))" (*ab////cd*)
-value "contents (move_left (move_left abcd0))" (*abcd*)
-
-value "(move_left (move_left (move_left abcd0)))" (*a///bcd*)
-value "contents (move_left (move_left (move_left abcd0)))" (*abcd*)
-
-value "(move_left (move_left (move_left (move_left abcd0))))" (*////abcd*)
-value "contents (move_left (move_left (move_left (move_left abcd0))))" (*abcd*)
-
 
 (* do not make buffers on the fly -- only use mkBuffer ! *)
 definition garb1 :: "GapBuffer" where
@@ -502,11 +570,48 @@ value "move_left empty10"
 value "contents empty10"
 value "contents (move_left empty10)"
 
-value "contents (move_left empty10)"
-lemma contents_move_left:
-  "valid gb \<Longrightarrow> contents (move_left gb) = contents gb"
+
+(* isar 
+lemma
+ "P"
 proof
-  by auto
+  assume H: "P"
+  show "Q"
+    sorry
+qed
+*)
+
+
+lemma contents_move_left:
+  "valid gb \<Longrightarrow> contents (move_left gb) = contents gb" 
+(*  sledgehammer*)
+  by nitpick [timeout=9999]
+(* we can set a time limit for checking counter example supply timeout *)
+(*  by nitpick [timeout = 120] *)
+
+(* sorry - take as proven but i wont provide you the proof with it *)
+(* oops  - abandons proof *)
+
+
+(*
+  apply (simp add: move_left_def)
+  apply (intro impI)
+  apply (simp)
+  apply assumption 
+*)
+  
+
+(*   apply (erule impE) *)
+  
+
+
+(*
+  by (simp add: contents_def move_left_def valid_def)
+  apply sledgehammer 
+
+ (simp add: contents_def move_left_def valid_def)
+  by sledgehammer
+*)
   
 
 
