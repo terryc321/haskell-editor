@@ -1,0 +1,29 @@
+
+(*lets try prove something that should hold true *)
+lemma contents_move_left:
+  "valid gb ⟹ contents (move_left gb) = contents gb"
+
+(*lets try putting definitions in and see what we get *)
+by (simp add: contents_def move_left_def valid_def) 
+huh?? 
+
+lets just simplify with move_left definition only
+
+(*lets try prove something that should hold true *)
+lemma contents_move_left:
+  "valid gb ⟹ contents (move_left gb) = contents gb"
+  by (simp add: move_left_def)
+
+
+ contents_move_left: valid ?gb ⟹ contents (move_left ?gb) = contents ?gb 
+Failed to finish proof⌂:
+goal (1 subgoal):
+ 1. valid gb ⟹
+    0 < gapLeft gb ⟶
+    contents
+     (gb⦇buffer :=
+           replace CHR ''/'' (gapLeft gb - Suc 0)
+            (replace (lookup (gapLeft gb - Suc 0) (buffer gb)) (gapRight gb)
+              (buffer gb)),
+           gapLeft := gapLeft gb - Suc 0, gapRight := gapRight gb - Suc 0⦈) =
+    contents gb
